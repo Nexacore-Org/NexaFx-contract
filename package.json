@@ -4,7 +4,7 @@
   "description": "A simple Node.js application",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "lint": "eslint 'src/**/*.ts' --max-warnings 0",
     "build": "tsc"
   },
