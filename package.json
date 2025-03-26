@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "lint": "eslint 'src/**/*.ts' 'test.ts' --max-warnings 0",
+    "lint": "eslint 'src/**/*.ts' --max-warnings 0",
     "build": "tsc"
   },
   "keywords": [
