@@ -1,0 +1,12 @@
+/Users/godswill/web3projects/Nexafx/NexaFx-contract/contracts/target/debug/deps/libsoroban_wasmi_core-953e91b2913dab0f.rmeta: /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/lib.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/host_error.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/nan_preserving_float.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/trap.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/untyped.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/value.rs
+
+/Users/godswill/web3projects/Nexafx/NexaFx-contract/contracts/target/debug/deps/libsoroban_wasmi_core-953e91b2913dab0f.rlib: /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/lib.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/host_error.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/nan_preserving_float.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/trap.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/untyped.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/value.rs
+
+/Users/godswill/web3projects/Nexafx/NexaFx-contract/contracts/target/debug/deps/soroban_wasmi_core-953e91b2913dab0f.d: /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/lib.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/host_error.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/nan_preserving_float.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/trap.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/untyped.rs /Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/value.rs
+
+/Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/lib.rs:
+/Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/host_error.rs:
+/Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/nan_preserving_float.rs:
+/Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/trap.rs:
+/Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/untyped.rs:
+/Users/godswill/.cargo/git/checkouts/wasmi-301e6db337b3b2df/d1ec003/core/src/value.rs:
