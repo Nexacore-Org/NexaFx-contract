@@ -93,3 +93,8 @@ impl MultiSigContract {
         env.storage().instance().get().unwrap()
     }
 }
+fn main() {
+    let env = Env::default();
+    let multisig = MultiSigContract::initialize(env, vec![], 1);
+    println!("MultiSig initialized");
+}
