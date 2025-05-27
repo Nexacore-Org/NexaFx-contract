@@ -2,7 +2,7 @@ use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec, Bytes
 
 // The MultiSig configuration
 #[contracttype]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MultiSigConfig {
     signers: Vec<Address>,
     threshold: u32,
