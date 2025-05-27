@@ -87,6 +87,12 @@ impl MultiSigContract {
 }
 fn main() {
     let env = Env::default();
-    let multisig = MultiSigContract::initialize(env, vec![], 1);
-    println!("MultiSig initialized");
+
+    // Create an empty soroban_sdk::Vec<Address>
+    let signers = Vec::<Address>::new(&env);
+
+    // Call initialize with proper type
+    let multisig = MultiSigContract::initialize(env, signers, 1);
+
+    println!("MultiSig initialized: {:?}", multisig);
 }
