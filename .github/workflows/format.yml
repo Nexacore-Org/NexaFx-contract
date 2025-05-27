@@ -1,0 +1,35 @@
+name: Auto Format Rust Code
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Needed to push back
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Auto format code
+        run: |
+          cargo fmt
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          if ! git diff --quiet; then
+            git add .
+            git commit -m "style: Auto-format Rust code via GitHub Actions"
+            git push origin HEAD:${{ github.ref_name }}
+          else
+            echo "No formatting changes needed"
+          fi
