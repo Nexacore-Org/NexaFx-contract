@@ -103,6 +103,16 @@ impl EscrowContract {
             status: EscrowStatus::Active,
         };
 
+        crate::event::EventEmitter::emit_escrow_created(
+            &env,
+            id.clone(),
+            sender.clone(),
+            recipient.clone(),
+            token.clone(),
+            amount,
+            timeout_duration,
+        );
+
         // Save the escrow
         env.storage().instance().set(&id, &escrow);
 
@@ -138,6 +148,16 @@ impl EscrowContract {
             &env.current_contract_address(), 
             &escrow.recipient, 
             &escrow.amount
+        );
+
+        // Emit escrow release event
+        crate::event::EventEmitter::emit_escrow_released(
+            &env,
+            escrow_id.clone(),
+            escrow.sender.clone(),
+            escrow.recipient.clone(),
+            escrow.token.clone(),
+            escrow.amount,
         );
 
         // Update the escrow status
@@ -290,4 +310,4 @@ impl EscrowContract {
         
         escrows
     }
-} 
+}

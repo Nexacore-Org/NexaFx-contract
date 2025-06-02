@@ -30,9 +30,24 @@ pub fn transfer_tokens(
     if *amount <= 0 {
         return Err(ContractError::from_contract_error("Amount must be positive"));
     }
+
+    // Get balances before transfer
+    let from_balance_before = get_token_balance(env, token_address, from);
+    let to_balance_before = get_token_balance(env, token_address, to);
     
     let token_client = token::Client::new(env, token_address);
     token_client.transfer(from, to, amount);
+
+    //Emit detailed transfer event with balance changes
+    crate::event::EventEmitter::emit_token_transfer(
+        env,
+        token_address.clone(),
+        from.clone(),
+        to.clone(),
+        *amount,
+        from_balance_before - amount,
+        to_balance_before + amount,
+    );
     
     log!(env, "transferred {} tokens from {} to {}", amount, from, to);
     Ok(())
