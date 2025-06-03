@@ -123,5 +123,3 @@ impl TokenContract {
         // For testing, return a simple value based on the address
         100
     }
-}
-
