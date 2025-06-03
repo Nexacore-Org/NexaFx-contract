@@ -13,4 +13,4 @@ soroban-sdk = { version = "22.0.7", features = ["testutils"] }
 testutils = ["soroban-sdk/testutils"]
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]

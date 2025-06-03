@@ -1,4 +1,4 @@
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec, BytesN};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, BytesN, Env, Vec};
 
 // The MultiSig configuration
 #[contracttype]
@@ -58,7 +58,7 @@ impl MultiSigContract {
 
         // In a real implementation, we would verify signatures here
         // This is simplified as soroban_auth is not directly compatible with newer SDK
-        
+
         // For testing purposes, we'll just count each signature as valid
         // In a real implementation, we would need to implement proper signature verification
         let valid_signatures = signatures.len() as u32;
