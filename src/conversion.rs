@@ -1,12 +1,11 @@
-#![no_std]
+use core::fmt::Write;
+use heapless::String as HString;
 use soroban_sdk::{
-    contract, contractimpl, contractmeta, contracttype, events, log, symbol_short, token, Address,
-    Env, Map, String as SorobanString, Symbol, Vec,
+    contract, contractimpl, contractmeta, contracttype, log, Address, Env, Map,
+    String as SorobanString, Symbol, Vec,
 };
 
-use crate::utils::{
-    get_token_balance, transfer_tokens, validate_address, validate_positive_amount,
-};
+use crate::utils::{validate_address, validate_positive_amount};
 
 use crate::events::publish;
 
@@ -293,15 +292,6 @@ impl ConversionContract {
     }
 
     /// Perform currency conversion
-    // pub fn convert_currency(
-    //     env: Env,
-    //     from_currency: Currency,
-    //     to_currency: Currency,
-    //     amount: i128,
-    // ) -> ConversionTx {
-    //     let user = env.current_contract_address();
-    //     user.require_auth();
-
     pub fn convert_currency(
         env: Env,
         user: Address, // Add user parameter
@@ -350,9 +340,10 @@ impl ConversionContract {
             .instance()
             .get(&DataKey::TxCounter)
             .unwrap_or(0);
-        let tx_id = Symbol::short(&format!("tx{}", tx_counter + 1));
-        //         use soroban_sdk::symbol_short;
-        // let tx_id = symbol_short!(&format!("tx{}", tx_counter + 1));
+        let mut s: HString<12> = HString::new();
+        s.push_str("tx").unwrap();
+        write!(&mut s, "{}", tx_counter + 1).unwrap();
+        let tx_id = Symbol::new(&env, s.as_str());
 
         // Update user balances atomically
         user_balance
@@ -449,21 +440,6 @@ impl ConversionContract {
             .get(&DataKey::Config)
             .unwrap_or_else(|| panic!("Contract not initialized"))
     }
-
-    // /// Deposit funds to user balance (for testing/admin purposes)
-    // pub fn deposit(env: Env, user: Address, currency: Currency, amount: i128) {
-    //     let config: PlatformConfig = env.storage().instance().get(&DataKey::Config).unwrap();
-    //     config.admin.require_auth();
-
-    //     validate_positive_amount(amount).unwrap();
-
-    //     let mut user_balance = Self::get_or_create_user_balance(&env, &user);
-    //     let current_balance = user_balance.balances.get(currency.clone()).unwrap_or(0);
-    //     user_balance.balances.set(currency, current_balance + amount);
-    //     user_balance.updated_at = env.ledger().timestamp();
-
-    //     env.storage().instance().set(&DataKey::Balance(user), &user_balance);
-    // }
 
     pub fn deposit(env: Env, user: Address, currency: Currency, amount: i128) {
         let config: PlatformConfig = env.storage().instance().get(&DataKey::Config).unwrap();

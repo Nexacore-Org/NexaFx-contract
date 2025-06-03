@@ -27,7 +27,7 @@ const CONFIG_KEY: &str = "CONFIG";
 #[contractimpl]
 impl MultiSigContract {
     pub fn initialize(env: Env, signers: Vec<Address>, threshold: u32) -> MultiSigConfig {
-        if threshold == 0 || threshold > signers.len() as u32 {
+        if threshold == 0 || threshold > signers.len() {
             panic!("Invalid threshold");
         }
 
@@ -61,7 +61,7 @@ impl MultiSigContract {
 
         // For testing purposes, we'll just count each signature as valid
         // In a real implementation, we would need to implement proper signature verification
-        let valid_signatures = signatures.len() as u32;
+        let valid_signatures = signatures.len();
 
         // Check if threshold is met
         if valid_signatures >= config.threshold {
@@ -85,14 +85,14 @@ impl MultiSigContract {
         env.storage().instance().get(&CONFIG_KEY).unwrap()
     }
 }
-fn main() {
-    let env = Env::default();
+// fn main() {
+//     let env = Env::default();
 
-    // Create an empty soroban_sdk::Vec<Address>
-    let signers = Vec::<Address>::new(&env);
+//     // Create an empty soroban_sdk::Vec<Address>
+//     let signers = Vec::<Address>::new(&env);
 
-    // Call initialize with proper type
-    let multisig = MultiSigContract::initialize(env, signers, 1);
+//     // Call initialize with proper type
+//     let multisig = MultiSigContract::initialize(env, signers, 1);
 
-    println!("MultiSig initialized: {:?}", multisig);
-}
+//     println!("MultiSig initialized: {:?}", multisig);
+// }

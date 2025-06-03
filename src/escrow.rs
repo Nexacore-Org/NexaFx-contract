@@ -1,3 +1,5 @@
+use core::fmt::Write;
+use heapless::String as HString;
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, token, Address, Env, Symbol, Vec,
 };
@@ -88,7 +90,10 @@ impl EscrowContract {
             .instance()
             .get(&ESCROW_COUNT_KEY)
             .unwrap_or(0u32);
-        let id = Symbol::new(&env, &format!("escrow_{}", count));
+        let mut s: HString<12> = HString::new();
+        s.push_str("escrow_").unwrap();
+        write!(&mut s, "{}", count).unwrap();
+        let id = Symbol::new(&env, s.as_str());
         env.storage()
             .instance()
             .set(&ESCROW_COUNT_KEY, &(count + 1));
@@ -281,7 +286,10 @@ impl EscrowContract {
         let mut escrows = Vec::new(&env);
 
         for i in 0..count {
-            let id = Symbol::new(&env, &format!("escrow_{}", i));
+            let mut s: HString<12> = HString::new();
+            s.push_str("escrow_").unwrap();
+            write!(&mut s, "{}", i).unwrap();
+            let id = Symbol::new(&env, s.as_str());
             if env.storage().instance().has(&id) {
                 let escrow: EscrowConfig = env.storage().instance().get(&id).unwrap();
                 escrows.push_back(EscrowInfo {

@@ -1,3 +1,5 @@
+#![no_std]
+
 pub mod conversion;
 pub mod escrow;
 pub mod events;
