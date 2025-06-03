@@ -327,5 +327,3 @@ impl EscrowContract {
 
         escrows
     }
- event-logging
-}
