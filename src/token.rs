@@ -1,4 +1,4 @@
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, Val, vec as soroban_vec};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, symbol_short};
 
 #[contracttype]
 #[derive(Clone)]
@@ -15,8 +15,8 @@ pub struct Balance {
     amount: i128,
 }
 
-const CONFIG_KEY: Symbol = Symbol::short("CONFIG");
-const BALANCE_KEY: Symbol = Symbol::short("BALANCE");
+const CONFIG_KEY: Symbol = symbol_short!("CONFIG");
+const BALANCE_KEY: Symbol = symbol_short!("BALANCE");
 
 #[contract]
 pub struct TokenContract;
