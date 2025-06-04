@@ -2,12 +2,11 @@
 
 pub mod conversion;
 pub mod escrow;
+pub mod event;
 pub mod events;
 pub mod multisig;
 pub mod token;
-pub mod event;
 pub mod utils;
-
 
 pub use conversion::ConversionContract;
 pub use conversion::Currency;

@@ -1,4 +1,6 @@
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, symbol_short};
+#![no_std]
+
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol};
 
 #[contracttype]
 #[derive(Clone)]
@@ -16,14 +18,19 @@ pub struct Balance {
 }
 
 const CONFIG_KEY: Symbol = symbol_short!("CONFIG");
-const BALANCE_KEY: Symbol = symbol_short!("BALANCE");
 
 #[contract]
 pub struct TokenContract;
 
 #[contractimpl]
 impl TokenContract {
-    pub fn initialize(env: Env, admin: Address, name: Symbol, symbol: Symbol, decimals: u32) -> TokenConfig {
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        name: Symbol,
+        symbol: Symbol,
+        decimals: u32,
+    ) -> TokenConfig {
         let config = TokenConfig {
             admin,
             name,
@@ -33,7 +40,6 @@ impl TokenContract {
         env.storage().instance().set(&CONFIG_KEY, &config);
         config
     }
-
     pub fn mint(env: Env, minter: Address, to: Address, amount: i128) {
         // Validate inputs
         if amount <= 0 {
@@ -50,7 +56,11 @@ impl TokenContract {
         }
 
         // Update balance
-        let mut to_balance: Balance = env.storage().instance().get(&to).unwrap_or(Balance { amount: 0 });
+        let mut to_balance: Balance = env
+            .storage()
+            .instance()
+            .get(&to)
+            .unwrap_or(Balance { amount: 0 });
         to_balance.amount += amount;
         env.storage().instance().set(&to, &to_balance);
 
@@ -64,7 +74,6 @@ impl TokenContract {
         });
         crate::event::EventEmitter::emit_event(&env, crate::event::TOKEN_TOPIC, event);
     }
-
     pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
         // Validate inputs
         if amount <= 0 {
@@ -75,8 +84,16 @@ impl TokenContract {
         from.require_auth();
 
         // Update balances
-        let mut from_balance: Balance = env.storage().instance().get(&from).unwrap_or(Balance { amount: 0 });
-        let mut to_balance: Balance = env.storage().instance().get(&to).unwrap_or(Balance { amount: 0 });
+        let mut from_balance: Balance = env
+            .storage()
+            .instance()
+            .get(&from)
+            .unwrap_or(Balance { amount: 0 });
+        let mut to_balance: Balance = env
+            .storage()
+            .instance()
+            .get(&to)
+            .unwrap_or(Balance { amount: 0 });
 
         if from_balance.amount < amount {
             panic!("Insufficient balance");
@@ -99,27 +116,15 @@ impl TokenContract {
             to_balance.amount,
         );
     }
-
     pub fn balance(env: Env, of: Address) -> i128 {
-        let balance: Balance = env.storage().instance().get(&of).unwrap_or(Balance { amount: 0 });
+        let balance: Balance = env
+            .storage()
+            .instance()
+            .get(&of)
+            .unwrap_or(Balance { amount: 0 });
         balance.amount
     }
-
     pub fn get_config(env: Env) -> TokenConfig {
         env.storage().instance().get(&CONFIG_KEY).unwrap()
     }
-}
-
-
-pub fn mint(_env: Env, _to: Address, _amount: i128) {
-    // Just a stub for testing
-}
-
-pub fn transfer(_env: Env, _from: Address, _to: Address, _amount: i128) {
-    // Just a stub for testing
-}
-
-pub fn balance(_env: Env, _of: Address) -> i128 {
-    // For testing, return a simple value based on the address
-    100
 }

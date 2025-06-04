@@ -1,4 +1,6 @@
-use soroban_sdk::{contracttype, log, token, Address, Env};
+#![no_std]
+
+use soroban_sdk::{contracttype, log, token, Address, Env, Vec};
 
 use crate::conversion::Currency;
 
@@ -52,15 +54,14 @@ pub fn transfer_tokens(
         return Err(ConversionError::InvalidAmount);
     }
 
-
     // Get balances before transfer
     let from_balance_before = get_token_balance(env, token_address, from);
     let to_balance_before = get_token_balance(env, token_address, to);
-    
+
     let token_client = token::Client::new(env, token_address);
     token_client.transfer(from, to, amount);
 
-    //Emit detailed transfer event with balance changes
+    // Emit detailed transfer event with balance changes
     crate::event::EventEmitter::emit_token_transfer(
         env,
         token_address.clone(),
@@ -70,19 +71,8 @@ pub fn transfer_tokens(
         from_balance_before - amount,
         to_balance_before + amount,
     );
-    
+
     log!(env, "transferred {} tokens from {} to {}", amount, from, to);
-
-    let token_client = token::Client::new(env, token_address);
-    token_client.transfer(from, to, amount);
-
-    log!(
-        env,
-        "Transferred {} tokens from {} to {}",
-        amount,
-        from,
-        to
-    );
 
     Ok(())
 }
@@ -215,7 +205,6 @@ pub fn update_balance_atomically(
     } else {
         current_balance + amount_change
     };
-
     log!(
         env,
         "Balance updated for {}: {} {} -> {}",
@@ -224,10 +213,8 @@ pub fn update_balance_atomically(
         current_balance,
         new_balance
     );
-
     Ok(new_balance)
 }
-
 pub fn validate_token_contract(env: &Env, _token_address: &Address) -> bool {
     true
 }

@@ -1,6 +1,8 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec, BytesN, Symbol, symbol_short};
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Symbol, Vec,
+};
 
 #[contracttype]
 #[derive(Clone, Debug)]
@@ -121,127 +123,7 @@ impl MultiSigContract {
             },
         );
         crate::event::EventEmitter::emit_event(&env, crate::event::MULTISIG_TOPIC, event);
-
         env.storage().instance().set(&CONFIG_KEY, &new_config);
         new_config
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use soroban_sdk::{testutils::{Address as _, Events}, Address, Symbol, Vec, Val};
-
-//     #[test]
-//     fn test_multisig_initialization() {
-//         let env = Env::default();
-//         env.mock_all_auths();
-
-//         let signer1 = Address::generate(&env);
-//         let signer2 = Address::generate(&env);
-//         let signers = Vec::from_array(&env, [signer1, signer2]);
-
-//         let config = MultiSigContract::initialize(env, signers.clone(), 2);
-
-//         assert_eq!(config.signers, signers);
-//         assert_eq!(config.threshold, 2);
-//         assert_eq!(config.nonce, 0);
-//     }
-
-//     #[test]
-//     fn test_propose_transaction() {
-//         let env = Env::default();
-//         env.mock_all_auths();
-
-//         let signer1 = Address::generate(&env);
-//         let signer2 = Address::generate(&env);
-//         let proposer = Address::generate(&env);
-//         let signers = Vec::from_array(&env, [signer1, signer2]);
-
-//         MultiSigContract::initialize(env.clone(), signers, 2);
-
-//         let operation = BytesN::from_array(&env, &[1u8; 32]);
-//         let sig1 = BytesN::from_array(&env, &[1u8; 64]);
-//         let sig2 = BytesN::from_array(&env, &[2u8; 64]);
-//         let signatures = Vec::from_array(&env, [sig1, sig2]);
-
-//         let result = MultiSigContract::propose_transaction(
-//             env.clone(),
-//             operation,
-//             signatures,
-//             proposer,
-//         );
-
-//         assert!(result);
-
-//         let events = env.events().all();
-//         assert_eq!(events.len(), 2); // Proposal + Execution events
-
-//         // Check proposal event
-//         let event = events.get_unchecked(0);
-//         let topics: Vec<Val> = event.1.clone();
-//         let data: Val = event.2.clone();
-//         let topic_symbol: Symbol = topics.get_unchecked(0).try_into().expect("Failed to convert topic to Symbol");
-//         let event_data: crate::event::DeFiEvent = data.try_into().expect("Failed to convert data to DeFiEvent");
-
-//         assert_eq!(topic_symbol, crate::event::MULTISIG_TOPIC);
-//         match event_data {
-//             crate::event::DeFiEvent::MultisigTransactionProposed(_) => {},
-//             _ => panic!("Wrong event type emitted for proposal"),
-//         }
-
-//         // Check execution event
-//         let event = events.get_unchecked(1);
-//         let topics: Vec<Val> = event.1.clone();
-//         let data: Val = event.2.clone();
-//         let topic_symbol: Symbol = topics.get_unchecked(0).try_into().expect("Failed to convert topic to Symbol");
-//         let event_data: crate::event::DeFiEvent = data.try_into().expect("Failed to convert data to DeFiEvent");
-
-//         assert_eq!(topic_symbol, crate::event::MULTISIG_TOPIC);
-//         match event_data {
-//             crate::event::DeFiEvent::MultisigTransactionExecuted(_) => {},
-//             _ => panic!("Wrong event type emitted for execution"),
-//         }
-//     }
-
-//     #[test]
-//     fn test_insufficient_signatures() {
-//         let env = Env::default();
-//         env.mock_all_auths();
-
-//         let signer1 = Address::generate(&env);
-//         let signer2 = Address::generate(&env);
-//         let proposer = Address::generate(&env);
-//         let signers = Vec::from_array(&env, [signer1, signer2]);
-
-//         MultiSigContract::initialize(env.clone(), signers, 2);
-
-//         let operation = BytesN::from_array(&env, &[1u8; 32]);
-//         let sig1 = BytesN::from_array(&env, &[1u8; 64]);
-//         let signatures = Vec::from_array(&env, [sig1]);
-
-//         let result = MultiSigContract::propose_transaction(
-//             env.clone(),
-//             operation,
-//             signatures,
-//             proposer,
-//         );
-
-//         assert!(!result);
-
-//         let events = env.events().all();
-//         assert_eq!(events.len(), 1); // Only proposal event
-
-//         let event = events.get_unchecked(0);
-//         let topics: Vec<Val> = event.1.clone();
-//         let data: Val = event.2.clone();
-//         let topic_symbol: Symbol = topics.get_unchecked(0).try_into().expect("Failed to convert topic to Symbol");
-//         let event_data: crate::event::DeFiEvent = data.try_into().expect("Failed to convert data to DeFiEvent");
-
-//         assert_eq!(topic_symbol, crate::event::MULTISIG_TOPIC);
-//         match event_data {
-//             crate::event::DeFiEvent::MultisigTransactionProposed(_) => {},
-//             _ => panic!("Wrong event type emitted"),
-//         }
-//     }
-// }

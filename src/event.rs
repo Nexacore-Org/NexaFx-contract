@@ -1,4 +1,6 @@
-use soroban_sdk::{contracttype, Address, Symbol, Env, Vec, BytesN, Bytes};
+#![no_std]
+
+use soroban_sdk::{contracttype, symbol_short, Address, Bytes, BytesN, Env, Symbol, Vec};
 
 // Event topics for efficient filtering and indexing
 pub const ESCROW_TOPIC: Symbol = symbol_short!("ESCROW");
@@ -317,24 +319,16 @@ impl EventQuery {
     pub fn escrow_events_filter() -> Symbol {
         ESCROW_TOPIC
     }
-
     pub fn swap_events_filter() -> Symbol {
         SWAP_TOPIC
     }
-
     pub fn multisig_events_filter() -> Symbol {
         MULTISIG_TOPIC
     }
-
     pub fn token_events_filter() -> Symbol {
         TOKEN_TOPIC
     }
-
     pub fn system_events_filter() -> Symbol {
         SYSTEM_TOPIC
     }
 }
-
-// Helper macro for importing symbol_short
-use soroban_sdk::symbol_short;
-
