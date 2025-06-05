@@ -1,4 +1,6 @@
-use soroban_sdk::{contracttype, log, token, Address, Env};
+#![no_std]
+
+use soroban_sdk::{contracttype, log, token, Address, Env, Vec};
 
 use crate::conversion::Currency;
 
@@ -33,7 +35,7 @@ pub fn validate_future_timestamp(env: &Env, timestamp: u64) -> Result<(), Conver
 }
 
 /// Validates an address
-pub fn validate_address(_env: &Env, address: &Address) -> Result<(), ConversionError> {
+pub fn validate_address(env: &Env, address: &Address) -> Result<(), ConversionError> {
     if address.to_string().is_empty() {
         return Err(ConversionError::InvalidAddress);
     }
@@ -42,7 +44,7 @@ pub fn validate_address(_env: &Env, address: &Address) -> Result<(), ConversionE
 
 /// Transfers tokens from one account to another
 pub fn transfer_tokens(
-    _env: &Env,
+    env: &Env,
     token_address: &Address,
     from: &Address,
     to: &Address,
@@ -52,22 +54,32 @@ pub fn transfer_tokens(
         return Err(ConversionError::InvalidAmount);
     }
 
-    let token_client = token::Client::new(_env, token_address);
+    // Get balances before transfer
+    let from_balance_before = get_token_balance(env, token_address, from);
+    let to_balance_before = get_token_balance(env, token_address, to);
+
+    let token_client = token::Client::new(env, token_address);
     token_client.transfer(from, to, amount);
 
-    log!(
-        _env,
-        "Transferred {} tokens from {} to {}",
-        amount,
-        from,
-        to
+    // Emit detailed transfer event with balance changes
+    crate::event::EventEmitter::emit_token_transfer(
+        env,
+        token_address.clone(),
+        from.clone(),
+        to.clone(),
+        *amount,
+        from_balance_before - amount,
+        to_balance_before + amount,
     );
+
+    log!(env, "transferred {} tokens from {} to {}", amount, from, to);
+
     Ok(())
 }
 
 /// Gets the balance of an account for a specific token
-pub fn get_token_balance(_env: &Env, token_address: &Address, account: &Address) -> i128 {
-    let token_client = token::Client::new(_env, token_address);
+pub fn get_token_balance(env: &Env, token_address: &Address, account: &Address) -> i128 {
+    let token_client = token::Client::new(env, token_address);
     token_client.balance(account)
 }
 
@@ -161,7 +173,7 @@ pub fn get_currency_symbol(currency: &Currency) -> &'static str {
 
 /// Validates rate lock duration
 pub fn validate_rate_lock_duration(
-    _env: &Env,
+    env: &Env,
     duration: u64,
     max_duration: u64,
 ) -> Result<(), ConversionError> {
@@ -178,7 +190,7 @@ pub fn is_rate_expired(rate_updated_at: u64, validity_duration: u64, current_tim
 
 /// Atomic balance update helper
 pub fn update_balance_atomically(
-    _env: &Env,
+    env: &Env,
     user: &Address,
     currency: &Currency,
     current_balance: i128,
@@ -193,23 +205,20 @@ pub fn update_balance_atomically(
     } else {
         current_balance + amount_change
     };
-
     log!(
-        _env,
+        env,
         "Balance updated for {}: {} {} -> {}",
         user,
         get_currency_symbol(currency),
         current_balance,
         new_balance
     );
-
     Ok(new_balance)
 }
-
-pub fn validate_token_contract(_env: &Env, _token_address: &Address) -> bool {
+pub fn validate_token_contract(env: &Env, _token_address: &Address) -> bool {
     true
 }
 
-pub fn validate_token_balance(_env: &Env, _token_address: &Address, _amount: i128) -> bool {
+pub fn validate_token_balance(env: &Env, _token_address: &Address, _amount: i128) -> bool {
     true
 }

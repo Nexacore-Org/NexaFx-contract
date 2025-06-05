@@ -1,3 +1,5 @@
+#![no_std]
+
 use core::fmt::Write;
 use heapless::String as HString;
 use soroban_sdk::{
@@ -113,6 +115,16 @@ impl EscrowContract {
             status: EscrowStatus::Active,
         };
 
+        crate::event::EventEmitter::emit_escrow_created(
+            &env,
+            id.clone(),
+            sender.clone(),
+            recipient.clone(),
+            token.clone(),
+            amount,
+            timeout_duration,
+        );
+
         // Save the escrow
         env.storage().instance().set(&id, &escrow);
 
@@ -148,6 +160,16 @@ impl EscrowContract {
             &env.current_contract_address(),
             &escrow.recipient,
             &escrow.amount,
+        );
+
+        // Emit escrow release event
+        crate::event::EventEmitter::emit_escrow_released(
+            &env,
+            escrow_id.clone(),
+            escrow.sender.clone(),
+            escrow.recipient.clone(),
+            escrow.token.clone(),
+            escrow.amount,
         );
 
         // Update the escrow status
@@ -284,7 +306,6 @@ impl EscrowContract {
             .get(&ESCROW_COUNT_KEY)
             .unwrap_or(0u32);
         let mut escrows = Vec::new(&env);
-
         for i in 0..count {
             let mut s: HString<12> = HString::new();
             s.push_str("escrow_").unwrap();
@@ -304,7 +325,6 @@ impl EscrowContract {
                 });
             }
         }
-
         escrows
     }
 }

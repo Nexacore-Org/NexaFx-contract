@@ -126,17 +126,20 @@ impl SwapTrait for SwapContract {
         env.storage().set(&DataKey::OfferCounter, &offer_id);
         
         // Emit offer created event
-        events::emit(&env, SwapEvent::OfferCreated {
+        // ✨ NEW: Emit swap offer creation event
+        crate::event::EventEmitter::emit_swap_offer_created(
+            &env,
             offer_id,
-            creator: creator.clone(),
-            offer_token: offer.offer_token.clone(),
+            creator.clone(),
+            offer_token.clone(),
             offer_amount,
-            request_token: offer.request_token.clone(),
+            request_token.clone(),
             request_amount,
             expires_at,
-        });
-        
+        );
+
         offer_id
+
     }
     
     fn accept_offer(env: Env, offer_id: u64) -> bool {
@@ -204,14 +207,38 @@ impl SwapTrait for SwapContract {
         // Remove the offer
         env.storage().remove(&DataKey::Offer(offer_id));
         
-        // Emit offer accepted event
-        events::emit(&env, SwapEvent::OfferAccepted {
+         let event = crate::event::DeFiEvent::SwapOfferAccepted {
+            topic: crate::event::SWAP_TOPIC,
             offer_id,
-            acceptor,
-        });
-        
+            creator: offer.creator.clone(),
+            acceptor: acceptor.clone(),
+            offer_token: offer.offer_token.clone(),
+            offer_amount: amount_after_fee,
+            request_token: offer.request_token.clone(),
+            request_amount: offer.request_amount,
+            fee_amount,
+            fee_token: offer.offer_token.clone(),
+            accepted_at: env.ledger().timestamp(),
+            tx_hash: None,
+        };
+        crate::event::EventEmitter::emit_event(&env, event);
+        }
+
+        if fee_amount > 0 {
+            let fee_event = crate::event::DeFiEvent::SwapFeeCollected {
+                topic: crate::event::SWAP_TOPIC,
+                offer_id,
+                fee_collector: config.fee_collector.clone(),
+                token: offer.offer_token.clone(),
+                amount: fee_amount,
+                fee_bps: config.fee_bps,
+                collected_at: env.ledger().timestamp(),
+                tx_hash: None,
+            };
+            crate::event::EventEmitter::emit_event(&env, fee_event);
+        }
+
         true
-    }
     
 
     fn cancel_offer(env: Env, offer_id: u64) -> bool {
