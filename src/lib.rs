@@ -1,6 +1,8 @@
 pub mod multisig;
 pub mod escrow;
 pub mod token;
+pub mod fees;
+pub mod test;
 
 pub use multisig::MultiSigContract;
 pub use escrow::EscrowContract;
