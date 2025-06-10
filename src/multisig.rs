@@ -1,6 +1,9 @@
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec, BytesN};
+#![no_std]
 
-// The MultiSig configuration
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Symbol, Vec,
+};
+
 #[contracttype]
 #[derive(Clone, Debug)]
 pub struct MultiSigConfig {
@@ -9,11 +12,10 @@ pub struct MultiSigConfig {
     nonce: u32,
 }
 
-// Transaction structure
 #[contracttype]
 #[derive(Clone)]
 pub struct Transaction {
-    operation: BytesN<32>, // Using BytesN instead of Vec<u8>
+    operation: BytesN<32>,
     timestamp: u64,
     nonce: u32,
 }
@@ -21,8 +23,7 @@ pub struct Transaction {
 #[contract]
 pub struct MultiSigContract;
 
-// Configuration key for storage
-const CONFIG_KEY: &str = "CONFIG";
+const CONFIG_KEY: Symbol = symbol_short!("CONFIG");
 
 #[contractimpl]
 impl MultiSigContract {
@@ -44,37 +45,46 @@ impl MultiSigContract {
     pub fn propose_transaction(
         env: Env,
         operation: BytesN<32>,
-        signatures: Vec<BytesN<64>>, // Using BytesN for signatures
+        signatures: Vec<BytesN<64>>,
+        proposer: Address,
     ) -> bool {
-        let config: MultiSigConfig = env.storage().instance().get(&CONFIG_KEY).unwrap();
+        let mut config: MultiSigConfig = env.storage().instance().get(&CONFIG_KEY).unwrap();
         let timestamp = env.ledger().timestamp();
 
-        // Create the transaction
         let _transaction = Transaction {
-            operation,
+            operation: operation.clone(),
             timestamp,
             nonce: config.nonce,
         };
 
-        // In a real implementation, we would verify signatures here
-        // This is simplified as soroban_auth is not directly compatible with newer SDK
-        
-        // For testing purposes, we'll just count each signature as valid
-        // In a real implementation, we would need to implement proper signature verification
         let valid_signatures = signatures.len() as u32;
 
-        // Check if threshold is met
-        if valid_signatures >= config.threshold {
-            // Update nonce for replay protection
-            let new_config = MultiSigConfig {
-                signers: config.signers.clone(),
+        let event = crate::event::DeFiEvent::MultisigTransactionProposed(
+            crate::event::MultisigTransactionProposedData {
+                nonce: config.nonce,
+                proposer: proposer.clone(),
+                operation_hash: operation.clone(),
                 threshold: config.threshold,
-                nonce: config.nonce + 1,
-            };
-            env.storage().instance().set(&CONFIG_KEY, &new_config);
+                current_signatures: valid_signatures,
+                proposed_at: env.ledger().timestamp(),
+            },
+        );
+        crate::event::EventEmitter::emit_event(&env, crate::event::MULTISIG_TOPIC, event);
 
-            // Execute the operation
-            // Note: In a real implementation, you would decode and execute the operation here
+        if valid_signatures >= config.threshold {
+            let exec_event = crate::event::DeFiEvent::MultisigTransactionExecuted(
+                crate::event::MultisigTransactionExecutedData {
+                    nonce: config.nonce,
+                    signers: config.signers.clone(),
+                    operation_hash: operation,
+                    executed_at: env.ledger().timestamp(),
+                },
+            );
+            crate::event::EventEmitter::emit_event(&env, crate::event::MULTISIG_TOPIC, exec_event);
+
+            config.nonce += 1;
+            env.storage().instance().set(&CONFIG_KEY, &config);
+
             true
         } else {
             false
@@ -84,15 +94,36 @@ impl MultiSigContract {
     pub fn get_config(env: Env) -> MultiSigConfig {
         env.storage().instance().get(&CONFIG_KEY).unwrap()
     }
-}
-fn main() {
-    let env = Env::default();
 
-    // Create an empty soroban_sdk::Vec<Address>
-    let signers = Vec::<Address>::new(&env);
+    pub fn update_config(
+        env: Env,
+        new_signers: Vec<Address>,
+        new_threshold: u32,
+        proposer: Address,
+    ) -> MultiSigConfig {
+        if new_threshold == 0 || new_threshold > new_signers.len() as u32 {
+            panic!("Invalid threshold");
+        }
 
-    // Call initialize with proper type
-    let multisig = MultiSigContract::initialize(env, signers, 1);
+        let old_config: MultiSigConfig = env.storage().instance().get(&CONFIG_KEY).unwrap();
 
-    println!("MultiSig initialized: {:?}", multisig);
+        let new_config = MultiSigConfig {
+            signers: new_signers.clone(),
+            threshold: new_threshold,
+            nonce: old_config.nonce,
+        };
+
+        let event = crate::event::DeFiEvent::MultisigConfigUpdated(
+            crate::event::MultisigConfigUpdatedData {
+                old_signers: old_config.signers,
+                new_signers,
+                old_threshold: old_config.threshold,
+                new_threshold,
+                updated_at: env.ledger().timestamp(),
+            },
+        );
+        crate::event::EventEmitter::emit_event(&env, crate::event::MULTISIG_TOPIC, event);
+        env.storage().instance().set(&CONFIG_KEY, &new_config);
+        new_config
+    }
 }

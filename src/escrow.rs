@@ -1,6 +1,9 @@
+#![no_std]
+
+use core::fmt::Write;
+use heapless::String as HString;
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, 
-    token, Address, Env, Symbol, Vec
+    contract, contractimpl, contracttype, symbol_short, token, Address, Env, Symbol, Vec,
 };
 
 /// Status of the escrow operation
@@ -84,9 +87,18 @@ impl EscrowContract {
         client.transfer(&sender, &env.current_contract_address(), &amount);
 
         // Create a unique ID for this escrow
-        let count = env.storage().instance().get(&ESCROW_COUNT_KEY).unwrap_or(0u32);
-        let id = Symbol::new(&env, &format!("escrow_{}", count));
-        env.storage().instance().set(&ESCROW_COUNT_KEY, &(count + 1));
+        let count = env
+            .storage()
+            .instance()
+            .get(&ESCROW_COUNT_KEY)
+            .unwrap_or(0u32);
+        let mut s: HString<12> = HString::new();
+        s.push_str("escrow_").unwrap();
+        write!(&mut s, "{}", count).unwrap();
+        let id = Symbol::new(&env, s.as_str());
+        env.storage()
+            .instance()
+            .set(&ESCROW_COUNT_KEY, &(count + 1));
 
         // Get current timestamp
         let created_at = env.ledger().timestamp();
@@ -102,6 +114,16 @@ impl EscrowContract {
             timeout_duration,
             status: EscrowStatus::Active,
         };
+
+        crate::event::EventEmitter::emit_escrow_created(
+            &env,
+            id.clone(),
+            sender.clone(),
+            recipient.clone(),
+            token.clone(),
+            amount,
+            timeout_duration,
+        );
 
         // Save the escrow
         env.storage().instance().set(&id, &escrow);
@@ -123,7 +145,7 @@ impl EscrowContract {
     pub fn release(env: Env, escrow_id: Symbol) -> EscrowInfo {
         // Get the escrow
         let escrow: EscrowConfig = env.storage().instance().get(&escrow_id).unwrap();
-        
+
         // Validate the escrow is active
         if escrow.status != EscrowStatus::Active {
             panic!("Escrow is not active");
@@ -135,9 +157,19 @@ impl EscrowContract {
         // Transfer the tokens to the recipient
         let client = token::Client::new(&env, &escrow.token);
         client.transfer(
-            &env.current_contract_address(), 
-            &escrow.recipient, 
-            &escrow.amount
+            &env.current_contract_address(),
+            &escrow.recipient,
+            &escrow.amount,
+        );
+
+        // Emit escrow release event
+        crate::event::EventEmitter::emit_escrow_released(
+            &env,
+            escrow_id.clone(),
+            escrow.sender.clone(),
+            escrow.recipient.clone(),
+            escrow.token.clone(),
+            escrow.amount,
         );
 
         // Update the escrow status
@@ -164,22 +196,22 @@ impl EscrowContract {
     pub fn refund(env: Env, escrow_id: Symbol) -> EscrowInfo {
         // Get the escrow
         let escrow: EscrowConfig = env.storage().instance().get(&escrow_id).unwrap();
-        
+
         // Validate the escrow is active
         if escrow.status != EscrowStatus::Active {
             panic!("Escrow is not active");
         }
 
         // For now, we'll just require the sender to authenticate for refund
-        // This is a simplification but ensures security 
+        // This is a simplification but ensures security
         escrow.sender.require_auth();
 
         // Transfer the tokens back to the sender
         let client = token::Client::new(&env, &escrow.token);
         client.transfer(
-            &env.current_contract_address(), 
-            &escrow.sender, 
-            &escrow.amount
+            &env.current_contract_address(),
+            &escrow.sender,
+            &escrow.amount,
         );
 
         // Update the escrow status
@@ -206,7 +238,7 @@ impl EscrowContract {
     pub fn check_timeout(env: Env, escrow_id: Symbol) -> EscrowInfo {
         // Get the escrow
         let escrow: EscrowConfig = env.storage().instance().get(&escrow_id).unwrap();
-        
+
         // Validate the escrow is active
         if escrow.status != EscrowStatus::Active {
             panic!("Escrow is not active");
@@ -215,7 +247,7 @@ impl EscrowContract {
         // Check if timeout has been reached
         let current_time = env.ledger().timestamp();
         let timeout_time = escrow.created_at + escrow.timeout_duration;
-        
+
         if current_time < timeout_time {
             panic!("Escrow has not timed out yet");
         }
@@ -223,9 +255,9 @@ impl EscrowContract {
         // Transfer the tokens to the recipient (auto-release)
         let client = token::Client::new(&env, &escrow.token);
         client.transfer(
-            &env.current_contract_address(), 
-            &escrow.recipient, 
-            &escrow.amount
+            &env.current_contract_address(),
+            &escrow.recipient,
+            &escrow.amount,
         );
 
         // Update the escrow status
@@ -252,7 +284,7 @@ impl EscrowContract {
     pub fn get_escrow(env: Env, escrow_id: Symbol) -> EscrowInfo {
         // Get the escrow
         let escrow: EscrowConfig = env.storage().instance().get(&escrow_id).unwrap();
-        
+
         // Return escrow info
         EscrowInfo {
             id: escrow.id,
@@ -268,11 +300,17 @@ impl EscrowContract {
 
     /// Get all active escrows
     pub fn get_all_escrows(env: Env) -> Vec<EscrowInfo> {
-        let count = env.storage().instance().get(&ESCROW_COUNT_KEY).unwrap_or(0u32);
+        let count = env
+            .storage()
+            .instance()
+            .get(&ESCROW_COUNT_KEY)
+            .unwrap_or(0u32);
         let mut escrows = Vec::new(&env);
-        
         for i in 0..count {
-            let id = Symbol::new(&env, &format!("escrow_{}", i));
+            let mut s: HString<12> = HString::new();
+            s.push_str("escrow_").unwrap();
+            write!(&mut s, "{}", i).unwrap();
+            let id = Symbol::new(&env, s.as_str());
             if env.storage().instance().has(&id) {
                 let escrow: EscrowConfig = env.storage().instance().get(&id).unwrap();
                 escrows.push_back(EscrowInfo {
@@ -287,7 +325,6 @@ impl EscrowContract {
                 });
             }
         }
-        
         escrows
     }
-} 
+}
