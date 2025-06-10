@@ -6,6 +6,7 @@ pub mod event;
 pub mod events;
 pub mod multisig;
 pub mod token;
+pub mod fees;
 pub mod utils;
 
 pub use conversion::ConversionContract;
