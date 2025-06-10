@@ -136,7 +136,7 @@ impl FeeSplitterContract {
         fee_collector_contract.require_auth();
 
         let config: FeeDistributionConfig = env.storage().instance().get(&DataKey::Config)
-            .ok_or_else(|| Error::from_contract_error(ERR_ALREADY_INITIALIZED))?;
+            .ok_or_else(|| Error::from_contract_error(ERR_NOT_INITIALIZED))?;
 
         let token_client = token::Client::new(&env, &fee_token);
 
