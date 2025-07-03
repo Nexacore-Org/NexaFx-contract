@@ -1,4 +1,4 @@
-#![no_std]
+
 
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol};
 
@@ -24,7 +24,7 @@ pub struct TokenContract;
 
 #[contractimpl]
 impl TokenContract {
-    pub fn initialize(
+    pub fn initialize_token(
         env: Env,
         admin: Address,
         name: Symbol,
@@ -124,7 +124,7 @@ impl TokenContract {
             .unwrap_or(Balance { amount: 0 });
         balance.amount
     }
-    pub fn get_config(env: Env) -> TokenConfig {
+    pub fn get_token_config(env: Env) -> TokenConfig {
         env.storage().instance().get(&CONFIG_KEY).unwrap()
     }
 }

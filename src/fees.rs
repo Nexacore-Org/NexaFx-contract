@@ -51,7 +51,7 @@ pub struct FeeSplitterContract;
 
 #[contractimpl]
 impl FeeSplitterContract {
-    pub fn initialize(
+    pub fn initialize_fees(
         env: Env,
         admin: Address,
         treasury_address: Address,
@@ -80,7 +80,7 @@ impl FeeSplitterContract {
         Ok(())
     }
 
-    pub fn update_config(
+    pub fn update_fees_config(
         env: Env,
         treasury_address: Option<Address>,
         reward_pool_address: Option<Address>,
@@ -113,7 +113,7 @@ impl FeeSplitterContract {
         Ok(config.clone())
     }
 
-    pub fn get_config(env: Env) -> Result<FeeDistributionConfig, Error> {
+    pub fn get_fees_config(env: Env) -> Result<FeeDistributionConfig, Error> {
         env.storage().instance().get(&DataKey::Config)
             .ok_or_else(|| Error::from_contract_error(ERR_NOT_INITIALIZED))
     }

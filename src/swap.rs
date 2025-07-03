@@ -1,4 +1,4 @@
-#![no_std]
+
 use soroban_sdk::{
     contract, contractimpl, contracttype, token, Address, Env, 
     IntoVal, Symbol, Vec, Map, log, events
@@ -27,7 +27,7 @@ pub struct SwapContract;
 impl SwapTrait for SwapContract {
     
     /// The initial contract configuration
-    fn initialize(env: Env, admin: Address) -> SwapConfig {
+    fn initialize_swap(env: Env, admin: Address) -> SwapConfig {
         // Verify the contract is not already initialized
         if env.storage().has(&DataKey::Config) {
             panic!("Contract already initialized");
@@ -279,7 +279,7 @@ impl SwapTrait for SwapContract {
             .ok_or_else(|| panic!("Offer not found")).unwrap()
     }
     
-    fn get_config(env: Env) -> SwapConfig {
+    fn get_swap_config(env: Env) -> SwapConfig {
         env.storage().get(&DataKey::Config)
             .ok_or_else(|| panic!("Contract not initialized")).unwrap()
     }

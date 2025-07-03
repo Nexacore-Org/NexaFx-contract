@@ -22,7 +22,7 @@ fn setup_contract(
     _admin: &Address,
     fee_collector: &Address,
 ) {
-    client.initialize(
+    client.initialize_conversion(
         _admin,
         &50u32, // 0.5% fee
         fee_collector,
@@ -204,7 +204,7 @@ fn test_eth_to_usd_conversion() {
     let (env, client, admin, fee_collector) = create_test_env();
     env.mock_all_auths();
     // Increase max_amount for this test to allow 1 ETH in wei
-    client.initialize(
+    client.initialize_conversion(
         &admin,
         &50u32, // 0.5% fee
         &fee_collector,
@@ -268,7 +268,7 @@ fn test_different_fee_rates() {
     env.mock_all_auths();
 
     // Initialize with higher fee (1%)
-    client.initialize(
+    client.initialize_conversion(
         &admin,
         &100u32, // 1% fee
         &fee_collector,
@@ -379,7 +379,7 @@ fn test_zero_fee_configuration() {
     env.mock_all_auths();
 
     // Initialize with zero fee
-    client.initialize(
+    client.initialize_conversion(
         &admin,
         &0u32, // 0% fee
         &fee_collector,
