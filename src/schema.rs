@@ -1,4 +1,4 @@
-#![no_std]
+
 use soroban_sdk::{contracttype, Address, Symbol, Vec, Map, Env};
 
 /// Represents a swap offer in the contract's storage
