@@ -1,5 +1,3 @@
-
-
 use core::fmt::Write;
 use heapless::String as HString;
 use soroban_sdk::{

@@ -1,9 +1,6 @@
-
-
-use soroban_sdk::{contract, contractimpl, Env, Address, String, IntoVal};
-use crate::utils::derive_wallet_address_from_email;
 use crate::errors::AppError;
-
+use crate::utils::derive_wallet_address_from_email;
+use soroban_sdk::{contract, contractimpl, Address, Env, IntoVal, String};
 
 pub struct EmailToWalletContract;
 
@@ -13,13 +10,12 @@ impl EmailToWalletContract {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Env, String};
 
-  #[test]
+    #[test]
     fn same_email_same_address() {
         let env = Env::default();
         let email = String::from_slice(&env, "user@example.com");
@@ -39,7 +35,10 @@ mod tests {
         let addr1 = derive_wallet_address_from_email(&env, &email1).expect("valid email");
         let addr2 = derive_wallet_address_from_email(&env, &email2).expect("valid email");
 
-        assert_ne!(addr1, addr2, "Different emails should produce different addresses");
+        assert_ne!(
+            addr1, addr2,
+            "Different emails should produce different addresses"
+        );
     }
 
     #[test]

@@ -1,13 +1,10 @@
-
-
-use soroban_sdk::{
-    contracttype, log, token, Address, Bytes, BytesN, Env, String, xdr::ScAddressType
-};
+use crate::conversion::Currency;
+use crate::errors::AppError;
 use soroban_sdk::vec;
 use soroban_sdk::xdr::FromXdr;
-use crate::errors::AppError;
-use crate::conversion::Currency;
-
+use soroban_sdk::{
+    contracttype, log, token, xdr::ScAddressType, Address, Bytes, BytesN, Env, String,
+};
 
 /// Validates that an amount is positive
 pub fn validate_positive_amount(amount: i128) -> Result<(), AppError> {
@@ -75,10 +72,7 @@ pub fn get_token_balance(env: &Env, token_address: &Address, account: &Address) 
 }
 
 /// Computes exchange rate between two token amounts
-pub fn compute_exchange_rate(
-    offer_amount: i128,
-    request_amount: i128,
-) -> Result<i128, AppError> {
+pub fn compute_exchange_rate(offer_amount: i128, request_amount: i128) -> Result<i128, AppError> {
     if offer_amount <= 0 || request_amount <= 0 {
         return Err(AppError::InvalidAmount);
     }
@@ -102,10 +96,7 @@ pub fn validate_currency_support(
 }
 
 /// Checks if user has sufficient balance for conversion
-pub fn check_sufficient_balance(
-    user_balance: i128,
-    required_amount: i128,
-) -> Result<(), AppError> {
+pub fn check_sufficient_balance(user_balance: i128, required_amount: i128) -> Result<(), AppError> {
     if user_balance < required_amount {
         return Err(AppError::InsufficientBalance);
     }
@@ -214,7 +205,6 @@ pub fn validate_token_balance(env: &Env, _token_address: &Address, _amount: i128
     true
 }
 
-
 // derive wallet address from email
 
 pub fn derive_wallet_address_from_email(env: &Env, email: &String) -> Result<Address, AppError> {
@@ -234,15 +224,13 @@ pub fn derive_wallet_address_from_email(env: &Env, email: &String) -> Result<Add
     let hash: BytesN<32> = env.crypto().sha256(&email_bytes).into();
 
     let mut xdr: [u8; 40] = [0; 40];
-    xdr[3] = 18; 
-    xdr[7] = 1;  
+    xdr[3] = 18;
+    xdr[7] = 1;
     let slice: &mut [u8; 32] = (&mut xdr[8..40]).try_into().unwrap();
     hash.copy_into_slice(slice);
 
     let addr_bytes = Bytes::from_slice(env, &xdr);
-    let address = Address::from_xdr(env, &addr_bytes)
-        .map_err(|_| AppError::InvalidAddress)?;
+    let address = Address::from_xdr(env, &addr_bytes).map_err(|_| AppError::InvalidAddress)?;
 
     Ok(address)
 }
-
