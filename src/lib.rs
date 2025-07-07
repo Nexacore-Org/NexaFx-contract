@@ -7,7 +7,9 @@ pub mod escrow;
 pub mod event;
 pub mod events;
 pub mod fees;
+pub mod mint;
 pub mod multisig;
+pub mod schema;
 pub mod token;
 pub mod utils;
 
