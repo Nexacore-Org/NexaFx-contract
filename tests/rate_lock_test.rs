@@ -1,11 +1,10 @@
 #![cfg(test)]
 
-use soroban_sdk::{Env, Address};
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::testutils::Ledger;
-use stellar_multisig_contract::rate_lock::{RateLockContract, RateLockError};
+use soroban_sdk::{Address, Env};
 use stellar_multisig_contract::rate_lock::RateLockContractClient as RateLockClient;
-
+use stellar_multisig_contract::rate_lock::{RateLockContract, RateLockError};
 
 #[test]
 fn test_lock_and_validate_rate() {

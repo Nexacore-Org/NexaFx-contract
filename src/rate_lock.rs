@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, Env, Address, Symbol, symbol_short};
+use soroban_sdk::{contract, contracterror, contractimpl, symbol_short, Address, Env, Symbol};
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
