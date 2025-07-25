@@ -9,9 +9,11 @@ pub mod events;
 pub mod fees;
 pub mod mint;
 pub mod multisig;
+pub mod nonce;
 pub mod schema;
 pub mod token;
 pub mod utils;
+pub mod rate_lock;
 
 pub use crate::email_to_wallet::EmailToWalletContract;
 pub use conversion::ConversionContract;
@@ -21,3 +23,5 @@ pub use event::*;
 pub use multisig::MultiSigContract;
 pub use token::TokenContract;
 pub use utils::*;
+pub use crate::nonce::NonceTracker;
+pub use crate::nonce::ContractError;
