@@ -165,7 +165,7 @@ impl Currency {
 #[contractimpl]
 impl ConversionContract {
     /// Initialize the conversion contract
-    pub fn initialize(
+    pub fn initialize_conversion(
         env: Env,
         admin: Address,
         fee_bps: u32,
@@ -434,7 +434,7 @@ impl ConversionContract {
     }
 
     /// Get platform configuration
-    pub fn get_config(env: Env) -> PlatformConfig {
+    pub fn get_conversion_config(env: Env) -> PlatformConfig {
         env.storage()
             .instance()
             .get(&DataKey::Config)

@@ -18,3 +18,18 @@ tsconfig.tsbuildinfo
 
 target/
 
+# Rust build output
+/target
+
+# IDE/editor config
+.DS_Store
+.idea/
+*.swp
+*.swo
+
+# Backup files
+**/*.rs.bk
+
+# Cargo package lock (optional: keep if publishing to crates.io)
+Cargo.lock
+

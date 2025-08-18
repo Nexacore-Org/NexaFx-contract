@@ -1,43 +1,31 @@
-#![no_std]
-
-use soroban_sdk::{contracttype, log, token, Address, Env, Vec};
-
 use crate::conversion::Currency;
-
-/// Custom error types for better error handling
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum ConversionError {
-    InvalidAmount,
-    InvalidAddress,
-    InvalidTimestamp,
-    InsufficientBalance,
-    UnsupportedCurrency,
-    RateExpired,
-    ConversionLimitExceeded,
-    Unauthorized,
-}
+use crate::errors::AppError;
+use soroban_sdk::vec;
+use soroban_sdk::xdr::FromXdr;
+use soroban_sdk::{
+    contracttype, log, token, xdr::ScAddressType, Address, Bytes, BytesN, Env, String,
+};
 
 /// Validates that an amount is positive
-pub fn validate_positive_amount(amount: i128) -> Result<(), ConversionError> {
+pub fn validate_positive_amount(amount: i128) -> Result<(), AppError> {
     if amount <= 0 {
-        return Err(ConversionError::InvalidAmount);
+        return Err(AppError::InvalidAmount);
     }
     Ok(())
 }
 
 /// Validates that a timestamp is in the future
-pub fn validate_future_timestamp(env: &Env, timestamp: u64) -> Result<(), ConversionError> {
+pub fn validate_future_timestamp(env: &Env, timestamp: u64) -> Result<(), AppError> {
     if timestamp <= env.ledger().timestamp() {
-        return Err(ConversionError::InvalidTimestamp);
+        return Err(AppError::InvalidTimestamp);
     }
     Ok(())
 }
 
 /// Validates an address
-pub fn validate_address(env: &Env, address: &Address) -> Result<(), ConversionError> {
+pub fn validate_address(env: &Env, address: &Address) -> Result<(), AppError> {
     if address.to_string().is_empty() {
-        return Err(ConversionError::InvalidAddress);
+        return Err(AppError::InvalidAddress);
     }
     Ok(())
 }
@@ -49,9 +37,9 @@ pub fn transfer_tokens(
     from: &Address,
     to: &Address,
     amount: &i128,
-) -> Result<(), ConversionError> {
+) -> Result<(), AppError> {
     if *amount <= 0 {
-        return Err(ConversionError::InvalidAmount);
+        return Err(AppError::InvalidAmount);
     }
 
     // Get balances before transfer
@@ -84,12 +72,9 @@ pub fn get_token_balance(env: &Env, token_address: &Address, account: &Address) 
 }
 
 /// Computes exchange rate between two token amounts
-pub fn compute_exchange_rate(
-    offer_amount: i128,
-    request_amount: i128,
-) -> Result<i128, ConversionError> {
+pub fn compute_exchange_rate(offer_amount: i128, request_amount: i128) -> Result<i128, AppError> {
     if offer_amount <= 0 || request_amount <= 0 {
-        return Err(ConversionError::InvalidAmount);
+        return Err(AppError::InvalidAmount);
     }
 
     // Return rate scaled by 10^8 for precision
@@ -101,22 +86,19 @@ pub fn compute_exchange_rate(
 pub fn validate_currency_support(
     currency: &Currency,
     supported_currencies: &soroban_sdk::Vec<Currency>,
-) -> Result<(), ConversionError> {
+) -> Result<(), AppError> {
     for supported in supported_currencies.iter() {
         if supported == *currency {
             return Ok(());
         }
     }
-    Err(ConversionError::UnsupportedCurrency)
+    Err(AppError::UnsupportedCurrency)
 }
 
 /// Checks if user has sufficient balance for conversion
-pub fn check_sufficient_balance(
-    user_balance: i128,
-    required_amount: i128,
-) -> Result<(), ConversionError> {
+pub fn check_sufficient_balance(user_balance: i128, required_amount: i128) -> Result<(), AppError> {
     if user_balance < required_amount {
-        return Err(ConversionError::InsufficientBalance);
+        return Err(AppError::InsufficientBalance);
     }
     Ok(())
 }
@@ -126,9 +108,9 @@ pub fn validate_conversion_limits(
     amount: i128,
     min_amount: i128,
     max_amount: i128,
-) -> Result<(), ConversionError> {
+) -> Result<(), AppError> {
     if amount < min_amount || amount > max_amount {
-        return Err(ConversionError::ConversionLimitExceeded);
+        return Err(AppError::ConversionLimitExceeded);
     }
     Ok(())
 }
@@ -176,9 +158,9 @@ pub fn validate_rate_lock_duration(
     env: &Env,
     duration: u64,
     max_duration: u64,
-) -> Result<(), ConversionError> {
+) -> Result<(), AppError> {
     if duration > max_duration {
-        return Err(ConversionError::InvalidTimestamp);
+        return Err(AppError::InvalidTimestamp);
     }
     Ok(())
 }
@@ -196,10 +178,10 @@ pub fn update_balance_atomically(
     current_balance: i128,
     amount_change: i128,
     is_debit: bool,
-) -> Result<i128, ConversionError> {
+) -> Result<i128, AppError> {
     let new_balance = if is_debit {
         if current_balance < amount_change {
-            return Err(ConversionError::InsufficientBalance);
+            return Err(AppError::InsufficientBalance);
         }
         current_balance - amount_change
     } else {
@@ -221,4 +203,34 @@ pub fn validate_token_contract(env: &Env, _token_address: &Address) -> bool {
 
 pub fn validate_token_balance(env: &Env, _token_address: &Address, _amount: i128) -> bool {
     true
+}
+
+// derive wallet address from email
+
+pub fn derive_wallet_address_from_email(env: &Env, email: &String) -> Result<Address, AppError> {
+    if email.len() == 0 {
+        return Err(AppError::InvalidAddress);
+    }
+
+    let len = email.len() as usize;
+    if len > 256 {
+        return Err(AppError::InvalidAddress);
+    }
+
+    let mut buf = [0u8; 256];
+    email.copy_into_slice(&mut buf[..len]);
+    let email_bytes = Bytes::from_slice(env, &buf[..len]);
+
+    let hash: BytesN<32> = env.crypto().sha256(&email_bytes).into();
+
+    let mut xdr: [u8; 40] = [0; 40];
+    xdr[3] = 18;
+    xdr[7] = 1;
+    let slice: &mut [u8; 32] = (&mut xdr[8..40]).try_into().unwrap();
+    hash.copy_into_slice(slice);
+
+    let addr_bytes = Bytes::from_slice(env, &xdr);
+    let address = Address::from_xdr(env, &addr_bytes).map_err(|_| AppError::InvalidAddress)?;
+
+    Ok(address)
 }

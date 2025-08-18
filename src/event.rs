@@ -1,5 +1,3 @@
-#![no_std]
-
 use soroban_sdk::{contracttype, symbol_short, Address, Bytes, BytesN, Env, Symbol, Vec};
 
 // Event topics for efficient filtering and indexing

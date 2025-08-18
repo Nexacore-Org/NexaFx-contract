@@ -1,5 +1,3 @@
-#![no_std]
-
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Symbol, Vec,
 };
@@ -27,7 +25,7 @@ const CONFIG_KEY: Symbol = symbol_short!("CONFIG");
 
 #[contractimpl]
 impl MultiSigContract {
-    pub fn initialize(env: Env, signers: Vec<Address>, threshold: u32) -> MultiSigConfig {
+    pub fn initialize_multisig(env: Env, signers: Vec<Address>, threshold: u32) -> MultiSigConfig {
         if threshold == 0 || threshold > signers.len() as u32 {
             panic!("Invalid threshold");
         }
@@ -91,11 +89,11 @@ impl MultiSigContract {
         }
     }
 
-    pub fn get_config(env: Env) -> MultiSigConfig {
+    pub fn get_multisig_config(env: Env) -> MultiSigConfig {
         env.storage().instance().get(&CONFIG_KEY).unwrap()
     }
 
-    pub fn update_config(
+    pub fn update_multisig_config(
         env: Env,
         new_signers: Vec<Address>,
         new_threshold: u32,
