@@ -42,6 +42,25 @@ pub struct EscrowRefundedData {
     pub refunded_at: u64,
 }
 
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct EscrowDisputeInitiatedData {
+    pub escrow_id: Symbol,
+    pub initiated_by: Address,
+    pub reason: Symbol,
+    pub dispute_period: u64,
+    pub initiated_at: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct EscrowDisputeResolvedData {
+    pub escrow_id: Symbol,
+    pub resolved_for: Address,
+    pub resolved_for_recipient: bool,
+    pub resolved_at: u64,
+}
+
 // Swap event data structures
 #[contracttype]
 #[derive(Clone, Debug)]
@@ -156,6 +175,8 @@ pub enum DeFiEvent {
     EscrowCreated(EscrowCreatedData),
     EscrowReleased(EscrowReleasedData),
     EscrowRefunded(EscrowRefundedData),
+    EscrowDisputeInitiated(EscrowDisputeInitiatedData),
+    EscrowDisputeResolved(EscrowDisputeResolvedData),
     SwapOfferCreated(SwapOfferCreatedData),
     SwapOfferAccepted(SwapOfferAcceptedData),
     TokenTransferred(TokenTransferredData),
@@ -215,6 +236,40 @@ impl EventEmitter {
             released_at: env.ledger().timestamp(),
         };
         let event = DeFiEvent::EscrowReleased(event_data);
+        Self::emit_event(env, ESCROW_TOPIC, event);
+    }
+
+    pub fn emit_dispute_initiated(
+        env: &Env,
+        escrow_id: Symbol,
+        initiated_by: Address,
+        reason: Symbol,
+        dispute_period: u64,
+    ) {
+        let event_data = EscrowDisputeInitiatedData {
+            escrow_id,
+            initiated_by,
+            reason,
+            dispute_period,
+            initiated_at: env.ledger().timestamp(),
+        };
+        let event = DeFiEvent::EscrowDisputeInitiated(event_data);
+        Self::emit_event(env, ESCROW_TOPIC, event);
+    }
+
+    pub fn emit_dispute_resolved(
+        env: &Env,
+        escrow_id: Symbol,
+        resolved_for: Address,
+        resolved_for_recipient: bool,
+    ) {
+        let event_data = EscrowDisputeResolvedData {
+            escrow_id,
+            resolved_for,
+            resolved_for_recipient,
+            resolved_at: env.ledger().timestamp(),
+        };
+        let event = DeFiEvent::EscrowDisputeResolved(event_data);
         Self::emit_event(env, ESCROW_TOPIC, event);
     }
 
