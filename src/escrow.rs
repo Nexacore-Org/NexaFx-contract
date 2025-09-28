@@ -1,7 +1,8 @@
 use core::fmt::Write;
 use heapless::String as HString;
 use soroban_sdk::{
-    contract, contractclient, contractimpl, contracttype, symbol_short, token, Address, Env, Symbol, Vec,
+    contract, contractclient, contractimpl, contracttype, symbol_short, token, Address, Env,
+    Symbol, Vec,
 };
 
 /// Status of the escrow operation
@@ -93,7 +94,7 @@ pub trait EscrowContractTrait {
         timeout_duration: u64,
         dispute_period: u64,
     ) -> EscrowInfo;
-    
+
     fn release(env: Env, escrow_id: Symbol) -> EscrowInfo;
     fn refund(env: Env, escrow_id: Symbol) -> EscrowInfo;
     fn check_timeout(env: Env, escrow_id: Symbol) -> EscrowInfo;
@@ -117,7 +118,11 @@ pub trait EscrowContractTrait {
     fn transfer_admin(env: Env, new_admin: Address);
     fn set_paused(env: Env, paused: bool);
     fn is_paused(env: Env) -> bool;
-    fn admin_resolve_dispute(env: Env, escrow_id: Symbol, resolve_for_recipient: bool) -> EscrowInfo;
+    fn admin_resolve_dispute(
+        env: Env,
+        escrow_id: Symbol,
+        resolve_for_recipient: bool,
+    ) -> EscrowInfo;
 }
 
 const ESCROW_COUNT_KEY: Symbol = symbol_short!("CNT");
@@ -137,7 +142,12 @@ impl EscrowContract {
         dispute_period: u64,
     ) -> EscrowInfo {
         // Check if contract is paused
-        if env.storage().instance().get(&symbol_short!("PAUSED")).unwrap_or(false) {
+        if env
+            .storage()
+            .instance()
+            .get(&symbol_short!("PAUSED"))
+            .unwrap_or(false)
+        {
             panic!("Contract is paused");
         }
 
@@ -433,7 +443,12 @@ impl EscrowContract {
     /// Initiate a dispute (can be called by sender or recipient)
     pub fn initiate_dispute(env: Env, escrow_id: Symbol, reason: Symbol) -> EscrowInfo {
         // Check if contract is paused
-        if env.storage().instance().get(&symbol_short!("PAUSED")).unwrap_or(false) {
+        if env
+            .storage()
+            .instance()
+            .get(&symbol_short!("PAUSED"))
+            .unwrap_or(false)
+        {
             panic!("Contract is paused");
         }
 
@@ -456,7 +471,11 @@ impl EscrowContract {
         let caller = escrow.sender.clone();
 
         // Handle dispute fee if set
-        let dispute_fee = env.storage().instance().get(&DISPUTE_FEE_KEY).unwrap_or(0i128);
+        let dispute_fee = env
+            .storage()
+            .instance()
+            .get(&DISPUTE_FEE_KEY)
+            .unwrap_or(0i128);
         if dispute_fee > 0 {
             let client = token::Client::new(&env, &escrow.token);
             let caller_balance = client.balance(&caller);
@@ -477,7 +496,9 @@ impl EscrowContract {
 
         // Store dispute info separately using a simple key pattern
         let dispute_key = symbol_short!("DISPUTE");
-        env.storage().instance().set(&(escrow_id.clone(), dispute_key), &dispute_info);
+        env.storage()
+            .instance()
+            .set(&(escrow_id.clone(), dispute_key), &dispute_info);
 
         // Update escrow with dispute
         let updated_escrow = EscrowConfig {
@@ -523,12 +544,16 @@ impl EscrowContract {
 
         // Get dispute info
         let dispute_key = symbol_short!("DISPUTE");
-        let dispute: DisputeInfo = env.storage().instance().get(&(escrow_id.clone(), dispute_key)).unwrap();
+        let dispute: DisputeInfo = env
+            .storage()
+            .instance()
+            .get(&(escrow_id.clone(), dispute_key))
+            .unwrap();
 
         // Check if dispute period has expired (auto-resolution)
         let current_time = env.ledger().timestamp();
         let dispute_expires_at = dispute.initiated_at + dispute.dispute_period;
-        
+
         if current_time < dispute_expires_at {
             // Manual resolution - require sender auth for now
             escrow.sender.require_auth();
@@ -584,12 +609,16 @@ impl EscrowContract {
 
         // Get dispute info
         let dispute_key = symbol_short!("DISPUTE");
-        let dispute: DisputeInfo = env.storage().instance().get(&(escrow_id.clone(), dispute_key)).unwrap();
+        let dispute: DisputeInfo = env
+            .storage()
+            .instance()
+            .get(&(escrow_id.clone(), dispute_key))
+            .unwrap();
 
         // Check if dispute period has expired (auto-resolution)
         let current_time = env.ledger().timestamp();
         let dispute_expires_at = dispute.initiated_at + dispute.dispute_period;
-        
+
         if current_time < dispute_expires_at {
             // Manual resolution - require sender auth for now
             escrow.sender.require_auth();
@@ -645,7 +674,11 @@ impl EscrowContract {
 
         // Get dispute info
         let dispute_key = symbol_short!("DISPUTE");
-        let dispute: DisputeInfo = env.storage().instance().get(&(escrow_id.clone(), dispute_key)).unwrap();
+        let dispute: DisputeInfo = env
+            .storage()
+            .instance()
+            .get(&(escrow_id.clone(), dispute_key))
+            .unwrap();
 
         // Check if dispute period has expired
         let current_time = env.ledger().timestamp();
@@ -697,13 +730,13 @@ impl EscrowContract {
             .get(&ESCROW_COUNT_KEY)
             .unwrap_or(0u32);
         let mut escrows = Vec::new(&env);
-        
+
         for i in 0..count {
             let mut s: HString<12> = HString::new();
             s.push_str("escrow_").unwrap();
             write!(&mut s, "{}", i).unwrap();
             let id = Symbol::new(&env, s.as_str());
-            
+
             if env.storage().instance().has(&id) {
                 let escrow: EscrowConfig = env.storage().instance().get(&id).unwrap();
                 if escrow.status == status {
@@ -733,13 +766,13 @@ impl EscrowContract {
             .get(&ESCROW_COUNT_KEY)
             .unwrap_or(0u32);
         let mut escrows = Vec::new(&env);
-        
+
         for i in 0..count {
             let mut s: HString<12> = HString::new();
             s.push_str("escrow_").unwrap();
             write!(&mut s, "{}", i).unwrap();
             let id = Symbol::new(&env, s.as_str());
-            
+
             if env.storage().instance().has(&id) {
                 let escrow: EscrowConfig = env.storage().instance().get(&id).unwrap();
                 if escrow.sender == participant || escrow.recipient == participant {
@@ -762,35 +795,39 @@ impl EscrowContract {
     }
 
     /// Update dispute period for an active escrow (only by sender before dispute)
-    pub fn update_dispute_period(env: Env, escrow_id: Symbol, new_dispute_period: u64) -> EscrowInfo {
+    pub fn update_dispute_period(
+        env: Env,
+        escrow_id: Symbol,
+        new_dispute_period: u64,
+    ) -> EscrowInfo {
         let escrow: EscrowConfig = env.storage().instance().get(&escrow_id).unwrap();
-        
+
         // Only sender can update and only if escrow is active with no dispute
         escrow.sender.require_auth();
-        
+
         if escrow.status != EscrowStatus::Active {
             panic!("Escrow is not active");
         }
-        
+
         if escrow.has_dispute {
             panic!("Cannot update dispute period after dispute initiated");
         }
-        
+
         if new_dispute_period == 0 {
             panic!("Dispute period must be non-zero");
         }
-        
+
         if escrow.timeout_duration < new_dispute_period {
             panic!("Dispute period cannot exceed timeout duration");
         }
-        
+
         let updated_escrow = EscrowConfig {
             dispute_period: new_dispute_period,
             ..escrow.clone()
         };
-        
+
         env.storage().instance().set(&escrow_id, &updated_escrow);
-        
+
         EscrowInfo {
             id: escrow.id,
             sender: escrow.sender,
@@ -811,10 +848,10 @@ impl EscrowContract {
         if env.storage().instance().has(&ADMIN_KEY) {
             panic!("Contract already initialized");
         }
-        
+
         admin.require_auth();
         env.storage().instance().set(&ADMIN_KEY, &admin);
-        
+
         // Set default dispute fee to 0 (can be updated by admin)
         env.storage().instance().set(&DISPUTE_FEE_KEY, &0i128);
     }
@@ -823,17 +860,20 @@ impl EscrowContract {
     pub fn set_dispute_fee(env: Env, fee: i128) {
         let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
         admin.require_auth();
-        
+
         if fee < 0 {
             panic!("Dispute fee cannot be negative");
         }
-        
+
         env.storage().instance().set(&DISPUTE_FEE_KEY, &fee);
     }
 
     /// Get current dispute fee
     pub fn get_dispute_fee(env: Env) -> i128 {
-        env.storage().instance().get(&DISPUTE_FEE_KEY).unwrap_or(0i128)
+        env.storage()
+            .instance()
+            .get(&DISPUTE_FEE_KEY)
+            .unwrap_or(0i128)
     }
 
     /// Get contract admin
@@ -845,7 +885,7 @@ impl EscrowContract {
     pub fn transfer_admin(env: Env, new_admin: Address) {
         let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
         admin.require_auth();
-        
+
         env.storage().instance().set(&ADMIN_KEY, &new_admin);
     }
 
@@ -853,26 +893,35 @@ impl EscrowContract {
     pub fn set_paused(env: Env, paused: bool) {
         let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
         admin.require_auth();
-        
-        env.storage().instance().set(&symbol_short!("PAUSED"), &paused);
+
+        env.storage()
+            .instance()
+            .set(&symbol_short!("PAUSED"), &paused);
     }
 
     /// Check if contract is paused
     pub fn is_paused(env: Env) -> bool {
-        env.storage().instance().get(&symbol_short!("PAUSED")).unwrap_or(false)
+        env.storage()
+            .instance()
+            .get(&symbol_short!("PAUSED"))
+            .unwrap_or(false)
     }
 
     /// Admin emergency resolution (admin only, for extreme cases)
-    pub fn admin_resolve_dispute(env: Env, escrow_id: Symbol, resolve_for_recipient: bool) -> EscrowInfo {
+    pub fn admin_resolve_dispute(
+        env: Env,
+        escrow_id: Symbol,
+        resolve_for_recipient: bool,
+    ) -> EscrowInfo {
         let admin: Address = env.storage().instance().get(&ADMIN_KEY).unwrap();
         admin.require_auth();
-        
+
         let escrow: EscrowConfig = env.storage().instance().get(&escrow_id).unwrap();
-        
+
         if escrow.status != EscrowStatus::Disputed {
             panic!("Escrow is not disputed");
         }
-        
+
         if resolve_for_recipient {
             // Transfer tokens to recipient
             let client = token::Client::new(&env, &escrow.token);
@@ -881,20 +930,20 @@ impl EscrowContract {
                 &escrow.recipient,
                 &escrow.amount,
             );
-            
+
             let updated_escrow = EscrowConfig {
                 status: EscrowStatus::DisputeResolvedForRecipient,
                 ..escrow.clone()
             };
             env.storage().instance().set(&escrow_id, &updated_escrow);
-            
+
             crate::event::EventEmitter::emit_dispute_resolved(
                 &env,
                 escrow_id.clone(),
                 escrow.recipient.clone(),
                 true,
             );
-            
+
             EscrowInfo {
                 id: escrow.id,
                 sender: escrow.sender,
@@ -915,20 +964,20 @@ impl EscrowContract {
                 &escrow.sender,
                 &escrow.amount,
             );
-            
+
             let updated_escrow = EscrowConfig {
                 status: EscrowStatus::DisputeResolvedForSender,
                 ..escrow.clone()
             };
             env.storage().instance().set(&escrow_id, &updated_escrow);
-            
+
             crate::event::EventEmitter::emit_dispute_resolved(
                 &env,
                 escrow_id.clone(),
                 escrow.sender.clone(),
                 false,
             );
-            
+
             EscrowInfo {
                 id: escrow.id,
                 sender: escrow.sender,

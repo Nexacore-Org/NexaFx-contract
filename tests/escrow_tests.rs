@@ -2,13 +2,9 @@
 
 mod mock_token;
 
-use soroban_sdk::{
-    symbol_short,
-    testutils::{Address as _},
-    Address, Env,
-};
-use stellar_multisig_contract::escrow::{EscrowClient, EscrowContract, EscrowStatus};
 use mock_token::{MockToken, MockTokenClient};
+use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
+use stellar_multisig_contract::escrow::{EscrowClient, EscrowContract, EscrowStatus};
 
 fn setup_test_env() -> (Env, Address, Address, Address, Address) {
     let env = Env::default();
@@ -16,19 +12,25 @@ fn setup_test_env() -> (Env, Address, Address, Address, Address) {
 
     let sender = Address::generate(&env);
     let recipient = Address::generate(&env);
-    
+
     // Deploy mock token
     let token_contract_id = env.register(MockToken, ());
     let token_client = MockTokenClient::new(&env, &token_contract_id);
-    
+
     // Initialize token and mint some tokens to sender
     token_client.initialize(&1_000_000);
     token_client.mint(&sender, &10_000);
-    
+
     // Deploy escrow contract
     let escrow_contract_id = env.register(EscrowContract, ());
-    
-    (env, escrow_contract_id, token_contract_id, sender, recipient)
+
+    (
+        env,
+        escrow_contract_id,
+        token_contract_id,
+        sender,
+        recipient,
+    )
 }
 
 #[test]
@@ -54,7 +56,7 @@ fn test_create_escrow_success() {
     assert_eq!(escrow_info.status, EscrowStatus::Active);
     assert_eq!(escrow_info.dispute_period, 1800);
     assert!(!escrow_info.has_dispute);
-    
+
     // Verify token was transferred from sender to escrow contract
     assert_eq!(token_client.balance(&sender), 10_000 - 500);
     assert_eq!(token_client.balance(&escrow_contract_id), 500);
@@ -67,20 +69,13 @@ fn test_release_escrow_success() {
     let token_client = MockTokenClient::new(&env, &token_contract_id);
 
     // Create escrow
-    let escrow_info = client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    let escrow_info = client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 
     // Release escrow
     let released_info = client.release(&escrow_info.id);
 
     assert_eq!(released_info.status, EscrowStatus::Released);
-    
+
     // Verify tokens were transferred to recipient
     assert_eq!(token_client.balance(&recipient), 500);
     assert_eq!(token_client.balance(&escrow_contract_id), 0);
@@ -92,14 +87,7 @@ fn test_initiate_dispute_by_sender() {
     let client = EscrowClient::new(&env, &escrow_contract_id);
 
     // Create escrow
-    let escrow_info = client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    let escrow_info = client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 
     // Initiate dispute by sender
     let disputed_info = client.initiate_dispute(&escrow_info.id, &symbol_short!("FRAUD"));
@@ -120,14 +108,7 @@ fn test_duplicate_dispute_initiation() {
     let client = EscrowClient::new(&env, &escrow_contract_id);
 
     // Create escrow
-    let escrow_info = client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    let escrow_info = client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 
     // Initiate first dispute
     client.initiate_dispute(&escrow_info.id, &symbol_short!("FRAUD"));
@@ -143,14 +124,7 @@ fn test_resolve_dispute_for_recipient() {
     let token_client = MockTokenClient::new(&env, &token_contract_id);
 
     // Create escrow and initiate dispute
-    let escrow_info = client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    let escrow_info = client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 
     client.initiate_dispute(&escrow_info.id, &symbol_short!("FRAUD"));
 
@@ -161,7 +135,7 @@ fn test_resolve_dispute_for_recipient() {
         resolved_info.status,
         EscrowStatus::DisputeResolvedForRecipient
     );
-    
+
     // Verify tokens were transferred to recipient
     assert_eq!(token_client.balance(&recipient), 500);
 }
@@ -173,14 +147,7 @@ fn test_resolve_dispute_for_sender() {
     let token_client = MockTokenClient::new(&env, &token_contract_id);
 
     // Create escrow and initiate dispute
-    let escrow_info = client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    let escrow_info = client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 
     client.initiate_dispute(&escrow_info.id, &symbol_short!("FRAUD"));
 
@@ -188,7 +155,7 @@ fn test_resolve_dispute_for_sender() {
     let resolved_info = client.resolve_dispute_for_sender(&escrow_info.id);
 
     assert_eq!(resolved_info.status, EscrowStatus::DisputeResolvedForSender);
-    
+
     // Verify tokens were returned to sender
     assert_eq!(token_client.balance(&sender), 10_000); // Original balance restored
 }
@@ -199,14 +166,7 @@ fn test_can_dispute_functionality() {
     let client = EscrowClient::new(&env, &escrow_contract_id);
 
     // Create escrow
-    let escrow_info = client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    let escrow_info = client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 
     // Should be able to dispute initially
     assert!(client.can_dispute(&escrow_info.id));
@@ -225,14 +185,7 @@ fn test_release_disputed_escrow() {
     let client = EscrowClient::new(&env, &escrow_contract_id);
 
     // Create escrow and initiate dispute
-    let escrow_info = client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    let escrow_info = client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 
     client.initiate_dispute(&escrow_info.id, &symbol_short!("FRAUD"));
 
@@ -330,14 +283,7 @@ fn test_paused_contract_validation() {
     client.set_paused(&true);
 
     // Try to create escrow while paused - should fail
-    client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 }
 
 #[test]
@@ -349,14 +295,7 @@ fn test_query_functions() {
     assert_eq!(client.get_escrow_count(), 0);
 
     // Create an escrow
-    let escrow_info = client.create(
-        &sender,
-        &recipient,
-        &token_contract_id,
-        &500,
-        &3600,
-        &1800,
-    );
+    let escrow_info = client.create(&sender, &recipient, &token_contract_id, &500, &3600, &1800);
 
     // Check count increased
     assert_eq!(client.get_escrow_count(), 1);

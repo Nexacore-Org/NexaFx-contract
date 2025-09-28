@@ -1,6 +1,4 @@
-use soroban_sdk::{
-    contract, contractimpl, contractmeta, contracttype, log, Address, Env, Vec,
-};
+use soroban_sdk::{contract, contractimpl, contractmeta, contracttype, log, Address, Env, Vec};
 
 use crate::conversion::Currency;
 use crate::utils::{validate_address, validate_positive_amount};
@@ -130,8 +128,6 @@ const DEFAULT_UTILIZATION_WARNING_BPS: u32 = 8000; // 80%
 const MAX_UTILIZATION_BPS: u32 = 9500; // 95%
 const BASIS_POINTS_DIVISOR: i128 = 10000;
 
-
-
 #[contractimpl]
 impl PoolManagerContract {
     /// Initialize the pool manager
@@ -166,9 +162,15 @@ impl PoolManagerContract {
 
         // Initialize active currencies list
         let active_currencies: Vec<Currency> = Vec::new(&env);
-        env.storage().instance().set(&PoolDataKey::PoolConfig, &config);
-        env.storage().instance().set(&PoolDataKey::ActiveCurrencies, &active_currencies);
-        env.storage().instance().set(&PoolDataKey::PositionCounter, &0u64);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::PoolConfig, &config);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::ActiveCurrencies, &active_currencies);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::PositionCounter, &0u64);
 
         log!(&env, "Pool manager initialized by admin: {}", admin);
         config
@@ -183,14 +185,14 @@ impl PoolManagerContract {
         lock_period: Option<u64>,
     ) -> LiquidityPosition {
         provider.require_auth();
-        
+
         let config = Self::get_pool_config_internal(&env);
         if config.is_paused {
             panic!("Pool manager is paused");
         }
 
         validate_positive_amount(amount).unwrap();
-        
+
         if amount < config.min_liquidity_amount || amount > config.max_liquidity_amount {
             panic!("Amount outside allowed liquidity limits");
         }
@@ -200,7 +202,7 @@ impl PoolManagerContract {
 
         // Get or create pool for currency
         let mut pool = Self::get_or_create_pool(&env, &currency);
-        
+
         // Get or create provider position
         let mut position = Self::get_or_create_position(&env, &provider, &currency);
 
@@ -208,7 +210,7 @@ impl PoolManagerContract {
         pool.total_liquidity += amount;
         pool.available_liquidity += amount;
         pool.last_activity_at = current_time;
-        
+
         if position.liquidity_amount == 0 {
             pool.provider_count += 1;
         }
@@ -225,8 +227,11 @@ impl PoolManagerContract {
         }
 
         // Store position first
-        env.storage().instance().set(&PoolDataKey::Position(provider.clone(), currency.clone()), &position);
-        
+        env.storage().instance().set(
+            &PoolDataKey::Position(provider.clone(), currency.clone()),
+            &position,
+        );
+
         // Recalculate shares for all providers in this currency pool
         Self::recalculate_all_shares(&env, &currency, pool.total_liquidity);
 
@@ -234,7 +239,9 @@ impl PoolManagerContract {
         pool.utilization_rate_bps = Self::calculate_utilization_rate(&pool);
 
         // Store updates
-        env.storage().instance().set(&PoolDataKey::Pool(currency.clone()), &pool);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::Pool(currency.clone()), &pool);
 
         // Update active currencies if this is a new pool
         Self::update_active_currencies(&env, &currency);
@@ -257,7 +264,10 @@ impl PoolManagerContract {
         if pool.utilization_rate_bps > config.utilization_warning_bps {
             Self::publish_pool_event(
                 &env,
-                PoolManagerEvent::PoolUtilizationWarning(currency.clone(), pool.utilization_rate_bps),
+                PoolManagerEvent::PoolUtilizationWarning(
+                    currency.clone(),
+                    pool.utilization_rate_bps,
+                ),
             );
         }
 
@@ -292,7 +302,7 @@ impl PoolManagerContract {
 
         // Get provider position
         let mut position = Self::get_position_internal(&env, &provider, &currency);
-        
+
         if position.lock_until > current_time {
             panic!("Liquidity is still locked");
         }
@@ -329,12 +339,17 @@ impl PoolManagerContract {
         // Store or remove position
         if position.liquidity_amount == 0 {
             // Remove position if no liquidity left
-            env.storage().instance().remove(&PoolDataKey::Position(provider.clone(), currency.clone()));
+            env.storage()
+                .instance()
+                .remove(&PoolDataKey::Position(provider.clone(), currency.clone()));
         } else {
             // Store updated position
-            env.storage().instance().set(&PoolDataKey::Position(provider.clone(), currency.clone()), &position);
+            env.storage().instance().set(
+                &PoolDataKey::Position(provider.clone(), currency.clone()),
+                &position,
+            );
         }
-        
+
         // Recalculate shares for all providers in this currency pool
         Self::recalculate_all_shares(&env, &currency, pool.total_liquidity);
 
@@ -342,7 +357,9 @@ impl PoolManagerContract {
         pool.utilization_rate_bps = Self::calculate_utilization_rate(&pool);
 
         // Store updates
-        env.storage().instance().set(&PoolDataKey::Pool(currency.clone()), &pool);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::Pool(currency.clone()), &pool);
 
         // Get updated position for correct share (if still exists)
         let updated_position = if position.liquidity_amount > 0 {
@@ -386,7 +403,7 @@ impl PoolManagerContract {
     ) -> (LiquidityPool, LiquidityPool) {
         // This function should be called by the conversion contract
         // For now, we'll allow any caller but in production this should be restricted
-        
+
         let current_time = env.ledger().timestamp();
 
         // Update source currency pool (liquidity consumed)
@@ -410,8 +427,12 @@ impl PoolManagerContract {
         to_pool.utilization_rate_bps = Self::calculate_utilization_rate(&to_pool);
 
         // Store updates
-        env.storage().instance().set(&PoolDataKey::Pool(from_currency.clone()), &from_pool);
-        env.storage().instance().set(&PoolDataKey::Pool(to_currency.clone()), &to_pool);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::Pool(from_currency.clone()), &from_pool);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::Pool(to_currency.clone()), &to_pool);
 
         // Emit events
         Self::publish_pool_event(
@@ -454,14 +475,19 @@ impl PoolManagerContract {
         config.admin.require_auth();
 
         let pool = Self::get_pool_internal(&env, &currency);
-        let reward_amount = (total_fee_amount * i128::from(config.provider_reward_rate_bps)) / BASIS_POINTS_DIVISOR;
+        let reward_amount =
+            (total_fee_amount * i128::from(config.provider_reward_rate_bps)) / BASIS_POINTS_DIVISOR;
 
         if reward_amount <= 0 {
             return Vec::new(&env);
         }
 
         let rewards: Vec<(Address, i128)> = Vec::new(&env);
-        let _active_currencies: Vec<Currency> = env.storage().instance().get(&PoolDataKey::ActiveCurrencies).unwrap_or_else(|| Vec::new(&env));
+        let _active_currencies: Vec<Currency> = env
+            .storage()
+            .instance()
+            .get(&PoolDataKey::ActiveCurrencies)
+            .unwrap_or_else(|| Vec::new(&env));
 
         // Find all positions for this currency
         // Note: In a real implementation, you'd want to maintain an index of positions per currency
@@ -494,7 +520,10 @@ impl PoolManagerContract {
 
     /// Get all active currencies with pools
     pub fn get_active_currencies(env: Env) -> Vec<Currency> {
-        env.storage().instance().get(&PoolDataKey::ActiveCurrencies).unwrap_or_else(|| Vec::new(&env))
+        env.storage()
+            .instance()
+            .get(&PoolDataKey::ActiveCurrencies)
+            .unwrap_or_else(|| Vec::new(&env))
     }
 
     /// Emergency pause functionality
@@ -503,7 +532,9 @@ impl PoolManagerContract {
         config.admin.require_auth();
 
         config.is_paused = true;
-        env.storage().instance().set(&PoolDataKey::PoolConfig, &config);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::PoolConfig, &config);
 
         Self::publish_pool_event(
             &env,
@@ -520,7 +551,9 @@ impl PoolManagerContract {
         config.admin.require_auth();
 
         config.is_paused = false;
-        env.storage().instance().set(&PoolDataKey::PoolConfig, &config);
+        env.storage()
+            .instance()
+            .set(&PoolDataKey::PoolConfig, &config);
 
         Self::publish_pool_event(
             &env,
@@ -567,14 +600,22 @@ impl PoolManagerContract {
             })
     }
 
-    fn get_position_internal(env: &Env, provider: &Address, currency: &Currency) -> LiquidityPosition {
+    fn get_position_internal(
+        env: &Env,
+        provider: &Address,
+        currency: &Currency,
+    ) -> LiquidityPosition {
         env.storage()
             .instance()
             .get(&PoolDataKey::Position(provider.clone(), currency.clone()))
             .unwrap_or_else(|| panic!("Liquidity position not found"))
     }
 
-    fn get_or_create_position(env: &Env, provider: &Address, currency: &Currency) -> LiquidityPosition {
+    fn get_or_create_position(
+        env: &Env,
+        provider: &Address,
+        currency: &Currency,
+    ) -> LiquidityPosition {
         env.storage()
             .instance()
             .get(&PoolDataKey::Position(provider.clone(), currency.clone()))
@@ -626,7 +667,9 @@ impl PoolManagerContract {
 
         if !found {
             active_currencies.push_back(currency.clone());
-            env.storage().instance().set(&PoolDataKey::ActiveCurrencies, &active_currencies);
+            env.storage()
+                .instance()
+                .set(&PoolDataKey::ActiveCurrencies, &active_currencies);
         }
     }
 
@@ -652,9 +695,10 @@ impl PoolManagerContract {
 
         if !found {
             providers.push_back(provider.clone());
-            env.storage()
-                .instance()
-                .set(&PoolDataKey::CurrencyProviders(currency.clone()), &providers);
+            env.storage().instance().set(
+                &PoolDataKey::CurrencyProviders(currency.clone()),
+                &providers,
+            );
         }
     }
 
@@ -673,9 +717,10 @@ impl PoolManagerContract {
             }
         }
 
-        env.storage()
-            .instance()
-            .set(&PoolDataKey::CurrencyProviders(currency.clone()), &new_providers);
+        env.storage().instance().set(
+            &PoolDataKey::CurrencyProviders(currency.clone()),
+            &new_providers,
+        );
     }
 
     fn recalculate_all_shares(env: &Env, currency: &Currency, total_liquidity: i128) {
@@ -689,17 +734,21 @@ impl PoolManagerContract {
             if let Some(mut position) = env
                 .storage()
                 .instance()
-                .get::<PoolDataKey, LiquidityPosition>(&PoolDataKey::Position(provider.clone(), currency.clone()))
+                .get::<PoolDataKey, LiquidityPosition>(&PoolDataKey::Position(
+                    provider.clone(),
+                    currency.clone(),
+                ))
             {
                 position.pool_share_bps = if total_liquidity > 0 {
                     Self::calculate_pool_share(position.liquidity_amount, total_liquidity)
                 } else {
                     0
                 };
-                
-                env.storage()
-                    .instance()
-                    .set(&PoolDataKey::Position(provider.clone(), currency.clone()), &position);
+
+                env.storage().instance().set(
+                    &PoolDataKey::Position(provider.clone(), currency.clone()),
+                    &position,
+                );
             }
         }
     }

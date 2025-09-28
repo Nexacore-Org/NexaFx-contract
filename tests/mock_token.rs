@@ -12,19 +12,32 @@ pub struct MockToken;
 #[contractimpl]
 impl MockToken {
     pub fn initialize(env: Env, total_supply: i128) {
-        env.storage().instance().set(&DataKey::TotalSupply, &total_supply);
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &total_supply);
     }
 
     pub fn mint(env: Env, to: Address, amount: i128) {
         let balance = Self::balance(env.clone(), to.clone());
-        env.storage().instance().set(&DataKey::Balance(to), &(balance + amount));
-        
-        let total_supply: i128 = env.storage().instance().get(&DataKey::TotalSupply).unwrap_or(0);
-        env.storage().instance().set(&DataKey::TotalSupply, &(total_supply + amount));
+        env.storage()
+            .instance()
+            .set(&DataKey::Balance(to), &(balance + amount));
+
+        let total_supply: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0);
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &(total_supply + amount));
     }
 
     pub fn balance(env: Env, id: Address) -> i128 {
-        env.storage().instance().get(&DataKey::Balance(id)).unwrap_or(0)
+        env.storage()
+            .instance()
+            .get(&DataKey::Balance(id))
+            .unwrap_or(0)
     }
 
     pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
@@ -37,11 +50,21 @@ impl MockToken {
             panic!("insufficient balance");
         }
 
-        env.storage().instance().set(&DataKey::Balance(from), &(from_balance - amount));
-        env.storage().instance().set(&DataKey::Balance(to), &(to_balance + amount));
+        env.storage()
+            .instance()
+            .set(&DataKey::Balance(from), &(from_balance - amount));
+        env.storage()
+            .instance()
+            .set(&DataKey::Balance(to), &(to_balance + amount));
     }
 
-    pub fn approve(env: Env, from: Address, spender: Address, amount: i128, _expiration_ledger: u32) {
+    pub fn approve(
+        env: Env,
+        from: Address,
+        spender: Address,
+        amount: i128,
+        _expiration_ledger: u32,
+    ) {
         from.require_auth();
         // For simplicity, we'll just store the approval without expiration logic
         let key = (from, spender);
@@ -68,9 +91,13 @@ impl MockToken {
 
         let to_balance = Self::balance(env.clone(), to.clone());
 
-        env.storage().instance().set(&DataKey::Balance(from.clone()), &(from_balance - amount));
-        env.storage().instance().set(&DataKey::Balance(to), &(to_balance + amount));
-        
+        env.storage()
+            .instance()
+            .set(&DataKey::Balance(from.clone()), &(from_balance - amount));
+        env.storage()
+            .instance()
+            .set(&DataKey::Balance(to), &(to_balance + amount));
+
         let key = (from, spender);
         env.storage().instance().set(&key, &(allowance - amount));
     }
@@ -83,10 +110,18 @@ impl MockToken {
             panic!("insufficient balance");
         }
 
-        env.storage().instance().set(&DataKey::Balance(from), &(balance - amount));
-        
-        let total_supply: i128 = env.storage().instance().get(&DataKey::TotalSupply).unwrap_or(0);
-        env.storage().instance().set(&DataKey::TotalSupply, &(total_supply - amount));
+        env.storage()
+            .instance()
+            .set(&DataKey::Balance(from), &(balance - amount));
+
+        let total_supply: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0);
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &(total_supply - amount));
     }
 
     pub fn burn_from(env: Env, spender: Address, from: Address, amount: i128) {
@@ -102,13 +137,21 @@ impl MockToken {
             panic!("insufficient balance");
         }
 
-        env.storage().instance().set(&DataKey::Balance(from.clone()), &(balance - amount));
-        
+        env.storage()
+            .instance()
+            .set(&DataKey::Balance(from.clone()), &(balance - amount));
+
         let key = (from, spender);
         env.storage().instance().set(&key, &(allowance - amount));
-        
-        let total_supply: i128 = env.storage().instance().get(&DataKey::TotalSupply).unwrap_or(0);
-        env.storage().instance().set(&DataKey::TotalSupply, &(total_supply - amount));
+
+        let total_supply: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0);
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &(total_supply - amount));
     }
 
     pub fn decimals(_env: Env) -> u32 {
