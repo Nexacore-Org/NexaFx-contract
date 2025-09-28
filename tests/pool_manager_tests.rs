@@ -7,8 +7,7 @@ use soroban_sdk::{
 use stellar_multisig_contract::{
     conversion::Currency,
     pool_manager::{
-        LiquidityPool, LiquidityPosition, PoolManagerConfig, PoolManagerContract,
-        PoolManagerEvent,
+        LiquidityPool, LiquidityPosition, PoolManagerConfig, PoolManagerContract, PoolManagerEvent,
     },
 };
 
@@ -146,7 +145,7 @@ fn test_add_liquidity_multiple_providers() {
     // Check positions - need to retrieve current position states
     let current_position1 = client.get_position(&provider1, &Currency::USD);
     let current_position2 = client.get_position(&provider2, &Currency::USD);
-    
+
     assert_eq!(current_position1.pool_share_bps, 6000); // 60%
     assert_eq!(current_position2.pool_share_bps, 4000); // 40%
 
@@ -310,23 +309,19 @@ fn test_update_pool_balance_on_conversion() {
 
     // Initialize and add liquidity to both currencies
     client.initialize_pool_manager(&admin, &1_000_000_000, &100_000_000_000, &86400, &50);
-    
+
     let usd_amount = 10_000_000_000;
     let eur_amount = 8_000_000_000;
-    
+
     client.add_liquidity(&provider, &Currency::USD, &usd_amount, &Some(0));
     client.add_liquidity(&provider, &Currency::EUR, &eur_amount, &Some(0));
 
     // Simulate conversion: 1000 USD -> 850 EUR
     let from_amount = 1_000_000_000;
     let to_amount = 850_000_000;
-    
-    let (from_pool, to_pool) = client.update_pool_on_conversion(
-        &Currency::USD,
-        &Currency::EUR,
-        &from_amount,
-        &to_amount,
-    );
+
+    let (from_pool, to_pool) =
+        client.update_pool_on_conversion(&Currency::USD, &Currency::EUR, &from_amount, &to_amount);
 
     // Check USD pool (source)
     assert_eq!(from_pool.total_liquidity, usd_amount);
@@ -503,7 +498,7 @@ fn test_pool_utilization_calculation() {
 
     // Add liquidity to EUR pool first
     client.add_liquidity(&provider, &Currency::EUR, &total_liquidity, &Some(0));
-    
+
     // Simulate 50% utilization through conversion
     let conversion_amount = 5_000_000_000; // 50 units
     client.update_pool_on_conversion(
