@@ -4,6 +4,10 @@ node_modules/
 # Build outputs
 dist/
 
+# Keep generated TypeScript bindings in repo for backend integration
+!bindings/dist/
+!bindings/dist/**
+
 # Logs
 *.log
 
