@@ -259,7 +259,7 @@ impl ConversionContract {
     }
 
     /// Lock exchange rate for a transaction
-    pub fn lock_rate(env: Env, from_currency: Currency, to_currency: Currency) -> ExchangeRate {
+    pub fn conversion_rate(env: Env, from_currency: Currency, to_currency: Currency) -> ExchangeRate {
         let config: PlatformConfig = env.storage().instance().get(&DataKey::Config).unwrap();
         let mut rate_info: ExchangeRate = env
             .storage()
